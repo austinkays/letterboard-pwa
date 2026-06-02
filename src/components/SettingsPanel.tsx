@@ -27,15 +27,15 @@ const appearanceChoices: SettingChoice<LetterboardSettings["appearance"]>[] = [
 ];
 
 const keySizeChoices: SettingChoice<LetterboardSettings["keySize"]>[] = [
-  { value: "comfortable", label: "Comfortable", ariaLabel: "Comfortable key size" },
+  { value: "comfortable", label: "Comfort", ariaLabel: "Comfortable key size" },
   { value: "large", label: "Large", ariaLabel: "Large key size" },
-  { value: "extraLarge", label: "Extra Large", ariaLabel: "Extra Large key size" },
+  { value: "extraLarge", label: "XL", ariaLabel: "Extra Large key size" },
 ];
 
 const selectionModeChoices: SettingChoice<SelectionMode>[] = [
   { value: "immediate", label: "Immediate", ariaLabel: "Immediate selection mode" },
-  { value: "release", label: "Release to Select", ariaLabel: "Release to Select selection mode" },
-  { value: "hold", label: "Hold to Select", ariaLabel: "Hold to Select (Experimental) selection mode" },
+  { value: "release", label: "Release", ariaLabel: "Release to Select selection mode" },
+  { value: "hold", label: "Hold", ariaLabel: "Hold to Select (Experimental) selection mode" },
 ];
 
 const holdDurationChoices: SettingChoice<HoldDurationMs>[] = [
