@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Letterboard icon">
+  <rect width="512" height="512" rx="72" fill="#f4f5f0"/>
+  <rect x="64" y="78" width="384" height="356" rx="34" fill="#ffffff" stroke="#5f6f66" stroke-width="18"/>
+  <g fill="#1b211e" font-family="Verdana, sans-serif" font-size="78" font-weight="700" text-anchor="middle">
+    <text x="154" y="190">A</text>
+    <text x="256" y="190">B</text>
+    <text x="358" y="190">C</text>
+    <text x="154" y="292">M</text>
+    <text x="256" y="292">N</text>
+    <text x="358" y="292">O</text>
+    <text x="154" y="394">Y</text>
+    <text x="256" y="394">Z</text>
+  </g>
+</svg>
