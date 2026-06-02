@@ -1,4 +1,11 @@
-import type { AppearanceMode, LetterboardSettings, ThemePreset } from "../models/settings";
+import type {
+  AppearanceMode,
+  HoldDurationMs,
+  LetterboardSettings,
+  RepeatGuardMs,
+  SelectionMode,
+  ThemePreset,
+} from "../models/settings";
 import type { KeySize } from "../models/board";
 
 const storageKey = "letterboard.settings.v1";
@@ -6,6 +13,9 @@ const storageKey = "letterboard.settings.v1";
 const themes = new Set<ThemePreset>(["calm", "coastal", "highContrast"]);
 const appearances = new Set<AppearanceMode>(["system", "light", "dark"]);
 const keySizes = new Set<KeySize>(["comfortable", "large", "extraLarge"]);
+const selectionModes = new Set<SelectionMode>(["immediate", "release", "hold"]);
+const holdDurations = new Set<HoldDurationMs>([500, 1000, 1500, 2000]);
+const repeatGuards = new Set<RepeatGuardMs>([0, 500, 1000, 1500]);
 
 export const defaultSettings: LetterboardSettings = {
   theme: "calm",
@@ -18,6 +28,10 @@ export const defaultSettings: LetterboardSettings = {
   voiceURI: "",
   rate: 0.7,
   volume: 1,
+  selectionMode: "immediate",
+  holdDurationMs: 1000,
+  repeatGuardMs: 0,
+  showHoldProgress: false,
 };
 
 export function loadSettings(storage: Storage = localStorage): LetterboardSettings {
@@ -52,6 +66,17 @@ function normalizeSettings(settings: Partial<LetterboardSettings>): LetterboardS
     voiceURI: typeof settings.voiceURI === "string" ? settings.voiceURI : defaultSettings.voiceURI,
     rate: boundedNumber(settings.rate, 0.1, 1.5, defaultSettings.rate),
     volume: boundedNumber(settings.volume, 0, 1, defaultSettings.volume),
+    selectionMode: selectionModes.has(settings.selectionMode as SelectionMode)
+      ? (settings.selectionMode as SelectionMode)
+      : defaultSettings.selectionMode,
+    holdDurationMs: holdDurations.has(settings.holdDurationMs as HoldDurationMs)
+      ? (settings.holdDurationMs as HoldDurationMs)
+      : defaultSettings.holdDurationMs,
+    repeatGuardMs: repeatGuards.has(settings.repeatGuardMs as RepeatGuardMs)
+      ? (settings.repeatGuardMs as RepeatGuardMs)
+      : defaultSettings.repeatGuardMs,
+    showHoldProgress:
+      typeof settings.showHoldProgress === "boolean" ? settings.showHoldProgress : defaultSettings.showHoldProgress,
   };
 }
 

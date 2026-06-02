@@ -1,9 +1,15 @@
+import { act } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import { fireEvent } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 
 describe("App", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    localStorage.clear();
+  });
+
   it("spells text and logs selections for letters, space, delete, and speak", async () => {
     const saveSession = vi.fn().mockResolvedValue(undefined);
     const speak = vi.fn();
@@ -63,6 +69,10 @@ describe("App", () => {
       theme: "highContrast",
       keySize: "large",
       masterMute: false,
+      selectionMode: "immediate",
+      holdDurationMs: 1000,
+      repeatGuardMs: 0,
+      showHoldProgress: false,
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Reset settings" }));
@@ -70,5 +80,55 @@ describe("App", () => {
     expect(screen.getByRole("main")).toHaveAttribute("data-theme", "calm");
     expect(screen.getByRole("button", { name: "A" })).toHaveAttribute("data-key-size", "comfortable");
     expect(screen.getByRole("switch", { name: "Master Mute" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("button", { name: "Immediate selection mode" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("switch", { name: "Show Timer Ring" })).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("selects on release mode pointer release and uses the release target", async () => {
+    render(<App services={{ sessionStore: { save: vi.fn().mockResolvedValue(undefined), list: vi.fn().mockResolvedValue([]) }, speech: { speak: vi.fn(), getVoices: () => [] } }} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Release to Select selection mode" }));
+    fireEvent.pointerDown(screen.getByRole("button", { name: "A" }), { pointerId: 1 });
+
+    expect(screen.getByLabelText("Current message")).toHaveTextContent("No message yet");
+
+    fireEvent.pointerUp(screen.getByRole("button", { name: "B" }), { pointerId: 1 });
+
+    expect(screen.getByLabelText("Current message")).toHaveTextContent("B");
+
+    fireEvent.keyDown(screen.getByRole("button", { name: "C" }), { key: "Enter" });
+
+    expect(screen.getByLabelText("Current message")).toHaveTextContent("BC");
+  });
+
+  it("selects in hold mode only after the configured hold duration", async () => {
+    vi.useFakeTimers();
+    render(<App services={{ sessionStore: { save: vi.fn().mockResolvedValue(undefined), list: vi.fn().mockResolvedValue([]) }, speech: { speak: vi.fn(), getVoices: () => [] } }} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Hold to Select (Experimental) selection mode" }));
+    fireEvent.click(screen.getByRole("button", { name: "0.5s hold time" }));
+    fireEvent.pointerEnter(screen.getByRole("button", { name: "A" }), { pointerId: 1 });
+
+    act(() => {
+      vi.advanceTimersByTime(499);
+    });
+    expect(screen.getByLabelText("Current message")).toHaveTextContent("No message yet");
+    expect(screen.getByRole("button", { name: "A" })).toHaveAttribute("data-hold-active", "true");
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(screen.getByLabelText("Current message")).toHaveTextContent("A");
+  });
+
+  it("ignore repeat blocks rapid same-key repeats while allowing different keys", () => {
+    render(<App services={{ sessionStore: { save: vi.fn().mockResolvedValue(undefined), list: vi.fn().mockResolvedValue([]) }, speech: { speak: vi.fn(), getVoices: () => [] } }} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "1.0s ignore repeat" }));
+    fireEvent.click(screen.getByRole("button", { name: "A" }));
+    fireEvent.click(screen.getByRole("button", { name: "A" }));
+    fireEvent.click(screen.getByRole("button", { name: "B" }));
+
+    expect(screen.getByLabelText("Current message")).toHaveTextContent("AB");
   });
 });

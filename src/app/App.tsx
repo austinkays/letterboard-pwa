@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BoardView } from "../components/BoardView";
 import { ControlsRow } from "../components/ControlsRow";
 import { SessionHistory } from "../components/SessionHistory";
@@ -33,6 +33,16 @@ export function App({ services }: AppProps) {
   const [sessions, setSessions] = useState<SpellingSession[]>([]);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>(() => activeServices.speech.getVoices());
   const [confirmingClear, setConfirmingClear] = useState(false);
+  const lastMotorSelectionRef = useRef<{ keyId: string; timestamp: number } | null>(null);
+
+  const motorSettings = useMemo(
+    () => ({
+      selectionMode: settings.selectionMode,
+      holdDurationMs: settings.holdDurationMs,
+      showHoldProgress: settings.showHoldProgress,
+    }),
+    [settings.holdDurationMs, settings.selectionMode, settings.showHoldProgress],
+  );
 
   useEffect(() => {
     saveSettings(settings);
@@ -124,6 +134,38 @@ export function App({ services }: AppProps) {
     speak(text);
   };
 
+  const runWithRepeatGuard = (keyId: string, action: () => void) => {
+    const now = Date.now();
+    const lastSelection = lastMotorSelectionRef.current;
+
+    if (
+      settings.repeatGuardMs > 0 &&
+      lastSelection?.keyId === keyId &&
+      now - lastSelection.timestamp < settings.repeatGuardMs
+    ) {
+      return;
+    }
+
+    lastMotorSelectionRef.current = { keyId, timestamp: now };
+    action();
+  };
+
+  const handleMotorLetter = (letter: string) => {
+    runWithRepeatGuard(`letter:${letter}`, () => handleLetter(letter));
+  };
+
+  const handleMotorSpace = () => {
+    runWithRepeatGuard("control:space", handleSpace);
+  };
+
+  const handleMotorDelete = () => {
+    runWithRepeatGuard("control:delete", handleDelete);
+  };
+
+  const handleMotorSpeak = () => {
+    runWithRepeatGuard("control:speak", handleSpeak);
+  };
+
   const handleTestVoice = () => {
     speak("Voice test");
   };
@@ -151,14 +193,15 @@ export function App({ services }: AppProps) {
 
         <TextDisplay text={text} />
 
-        <BoardView board={board} keySize={settings.keySize} onLetter={handleLetter} />
+        <BoardView board={board} keySize={settings.keySize} motorSettings={motorSettings} onLetter={handleMotorLetter} />
 
         <ControlsRow
           keySize={settings.keySize}
-          onSpace={handleSpace}
-          onDelete={handleDelete}
+          motorSettings={motorSettings}
+          onSpace={handleMotorSpace}
+          onDelete={handleMotorDelete}
           onClear={() => setConfirmingClear(true)}
-          onSpeak={handleSpeak}
+          onSpeak={handleMotorSpeak}
         />
 
         <div className="utility-panels">
