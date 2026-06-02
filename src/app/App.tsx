@@ -9,7 +9,7 @@ import { createSession, type SpellingSession } from "../models/session";
 import type { LetterboardSettings } from "../models/settings";
 import { exportSession, type ExportFormat } from "../services/exportService";
 import { requestScreenWakeLock } from "../services/pwaService";
-import { saveSettings, loadSettings } from "../services/settingsService";
+import { defaultSettings, saveSettings, loadSettings } from "../services/settingsService";
 import { sessionStore, type SessionStore } from "../services/sessionStore";
 import { speechService, type SpeechController } from "../services/speechService";
 
@@ -124,6 +124,14 @@ export function App({ services }: AppProps) {
     speak(text);
   };
 
+  const handleTestVoice = () => {
+    speak("Voice test");
+  };
+
+  const handleResetSettings = () => {
+    setSettings(defaultSettings);
+  };
+
   const handleExport = (targetSession: SpellingSession, format: ExportFormat) => {
     void exportSession(targetSession, format);
   };
@@ -154,7 +162,13 @@ export function App({ services }: AppProps) {
         />
 
         <div className="utility-panels">
-          <SettingsPanel settings={settings} voices={voices} onSettingsChange={setSettings} />
+          <SettingsPanel
+            settings={settings}
+            voices={voices}
+            onSettingsChange={setSettings}
+            onResetSettings={handleResetSettings}
+            onTestVoice={handleTestVoice}
+          />
           <SessionHistory currentSession={session} sessions={sessions} onExport={handleExport} />
         </div>
       </div>

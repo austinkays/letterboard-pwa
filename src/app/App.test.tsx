@@ -45,4 +45,30 @@ describe("App", () => {
     expect(screen.getByLabelText("Current message")).toHaveTextContent("No message yet");
     await waitFor(() => expect(saveSession).toHaveBeenCalledTimes(2));
   });
+
+  it("applies, persists, tests, and resets settings from the panel", async () => {
+    const speak = vi.fn();
+
+    render(<App services={{ sessionStore: { save: vi.fn().mockResolvedValue(undefined), list: vi.fn().mockResolvedValue([]) }, speech: { speak, getVoices: () => [] } }} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "High Contrast theme" }));
+    fireEvent.click(screen.getByRole("button", { name: "Large key size" }));
+    fireEvent.click(screen.getByRole("switch", { name: "Master Mute" }));
+    fireEvent.click(screen.getByRole("button", { name: "Test voice" }));
+
+    expect(screen.getByRole("main")).toHaveAttribute("data-theme", "highContrast");
+    expect(screen.getByRole("button", { name: "A" })).toHaveAttribute("data-key-size", "large");
+    expect(speak).toHaveBeenCalledWith("Voice test", expect.objectContaining({ masterMute: false, keySize: "large" }));
+    expect(JSON.parse(localStorage.getItem("letterboard.settings.v1") ?? "{}")).toMatchObject({
+      theme: "highContrast",
+      keySize: "large",
+      masterMute: false,
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Reset settings" }));
+
+    expect(screen.getByRole("main")).toHaveAttribute("data-theme", "calm");
+    expect(screen.getByRole("button", { name: "A" })).toHaveAttribute("data-key-size", "comfortable");
+    expect(screen.getByRole("switch", { name: "Master Mute" })).toHaveAttribute("aria-checked", "true");
+  });
 });

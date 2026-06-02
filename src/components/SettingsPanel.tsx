@@ -4,48 +4,134 @@ interface SettingsPanelProps {
   settings: LetterboardSettings;
   voices: SpeechSynthesisVoice[];
   onSettingsChange(settings: LetterboardSettings): void;
+  onResetSettings(): void;
+  onTestVoice(): void;
 }
 
-export function SettingsPanel({ settings, voices, onSettingsChange }: SettingsPanelProps) {
+type SettingChoice<Value extends string> = {
+  value: Value;
+  label: string;
+  ariaLabel: string;
+};
+
+const themeChoices: SettingChoice<LetterboardSettings["theme"]>[] = [
+  { value: "calm", label: "Calm", ariaLabel: "Calm theme" },
+  { value: "coastal", label: "Coastal", ariaLabel: "Coastal theme" },
+  { value: "highContrast", label: "High Contrast", ariaLabel: "High Contrast theme" },
+];
+
+const appearanceChoices: SettingChoice<LetterboardSettings["appearance"]>[] = [
+  { value: "system", label: "System", ariaLabel: "System appearance" },
+  { value: "light", label: "Light", ariaLabel: "Light appearance" },
+  { value: "dark", label: "Dark", ariaLabel: "Dark appearance" },
+];
+
+const keySizeChoices: SettingChoice<LetterboardSettings["keySize"]>[] = [
+  { value: "comfortable", label: "Comfortable", ariaLabel: "Comfortable key size" },
+  { value: "large", label: "Large", ariaLabel: "Large key size" },
+  { value: "extraLarge", label: "Extra Large", ariaLabel: "Extra Large key size" },
+];
+
+export function SettingsPanel({ settings, voices, onSettingsChange, onResetSettings, onTestVoice }: SettingsPanelProps) {
   const update = <Key extends keyof LetterboardSettings>(key: Key, value: LetterboardSettings[Key]) => {
     onSettingsChange({ ...settings, [key]: value });
   };
 
   return (
-    <details className="panel settings-panel">
-      <summary>Settings</summary>
+    <section className="panel settings-panel" aria-labelledby="settings-title">
+      <div className="settings-heading">
+        <h2 id="settings-title">Settings</h2>
+        <div className="settings-actions">
+          <button type="button" className="secondary-action" onClick={onTestVoice}>
+            Test voice
+          </button>
+          <button type="button" className="secondary-action" onClick={onResetSettings}>
+            Reset settings
+          </button>
+        </div>
+      </div>
+
       <div className="settings-grid">
-        <label>
-          Theme
-          <select value={settings.theme} onChange={(event) => update("theme", event.target.value as LetterboardSettings["theme"])}>
-            <option value="calm">Calm</option>
-            <option value="coastal">Coastal</option>
-            <option value="highContrast">High Contrast</option>
-          </select>
-        </label>
+        <fieldset className="setting-group">
+          <legend>Theme</legend>
+          <div className="segmented-control">
+            {themeChoices.map((choice) => (
+              <button
+                type="button"
+                className="setting-option"
+                aria-label={choice.ariaLabel}
+                aria-pressed={settings.theme === choice.value}
+                data-selected={settings.theme === choice.value}
+                onClick={() => update("theme", choice.value)}
+                key={choice.value}
+              >
+                {choice.label}
+              </button>
+            ))}
+          </div>
+        </fieldset>
 
-        <label>
-          Appearance
-          <select
-            value={settings.appearance}
-            onChange={(event) => update("appearance", event.target.value as LetterboardSettings["appearance"])}
-          >
-            <option value="system">System</option>
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-          </select>
-        </label>
+        <fieldset className="setting-group">
+          <legend>Appearance</legend>
+          <div className="segmented-control">
+            {appearanceChoices.map((choice) => (
+              <button
+                type="button"
+                className="setting-option"
+                aria-label={choice.ariaLabel}
+                aria-pressed={settings.appearance === choice.value}
+                data-selected={settings.appearance === choice.value}
+                onClick={() => update("appearance", choice.value)}
+                key={choice.value}
+              >
+                {choice.label}
+              </button>
+            ))}
+          </div>
+        </fieldset>
 
-        <label>
-          Key Size
-          <select value={settings.keySize} onChange={(event) => update("keySize", event.target.value as LetterboardSettings["keySize"])}>
-            <option value="comfortable">Comfortable</option>
-            <option value="large">Large</option>
-            <option value="extraLarge">Extra Large</option>
-          </select>
-        </label>
+        <fieldset className="setting-group">
+          <legend>Key Size</legend>
+          <div className="segmented-control">
+            {keySizeChoices.map((choice) => (
+              <button
+                type="button"
+                className="setting-option"
+                aria-label={choice.ariaLabel}
+                aria-pressed={settings.keySize === choice.value}
+                data-selected={settings.keySize === choice.value}
+                onClick={() => update("keySize", choice.value)}
+                key={choice.value}
+              >
+                {choice.label}
+              </button>
+            ))}
+          </div>
+        </fieldset>
 
-        <label>
+        <fieldset className="setting-group">
+          <legend>Speech</legend>
+          <div className="toggle-grid">
+            <ToggleButton label="Master Mute" checked={settings.masterMute} onToggle={() => update("masterMute", !settings.masterMute)} />
+            <ToggleButton
+              label="Speak Each Letter"
+              checked={settings.speakLetters}
+              onToggle={() => update("speakLetters", !settings.speakLetters)}
+            />
+            <ToggleButton
+              label="Speak Completed Word"
+              checked={settings.speakWords}
+              onToggle={() => update("speakWords", !settings.speakWords)}
+            />
+            <ToggleButton
+              label="Reduced Motion"
+              checked={settings.reducedMotion}
+              onToggle={() => update("reducedMotion", !settings.reducedMotion)}
+            />
+          </div>
+        </fieldset>
+
+        <label className="setting-field">
           Voice
           <select value={settings.voiceURI} onChange={(event) => update("voiceURI", event.target.value)}>
             <option value="">System Default</option>
@@ -57,8 +143,8 @@ export function SettingsPanel({ settings, voices, onSettingsChange }: SettingsPa
           </select>
         </label>
 
-        <label>
-          Rate
+        <label className="setting-field">
+          <span>Rate {settings.rate.toFixed(1)}</span>
           <input
             type="range"
             min="0.1"
@@ -69,8 +155,8 @@ export function SettingsPanel({ settings, voices, onSettingsChange }: SettingsPa
           />
         </label>
 
-        <label>
-          Volume
+        <label className="setting-field">
+          <span>Volume {Math.round(settings.volume * 100)}%</span>
           <input
             type="range"
             min="0"
@@ -80,27 +166,24 @@ export function SettingsPanel({ settings, voices, onSettingsChange }: SettingsPa
             onChange={(event) => update("volume", Number(event.target.value))}
           />
         </label>
-
-        <label className="check-row">
-          <input type="checkbox" checked={settings.reducedMotion} onChange={(event) => update("reducedMotion", event.target.checked)} />
-          Reduced Motion
-        </label>
-
-        <label className="check-row">
-          <input type="checkbox" checked={settings.masterMute} onChange={(event) => update("masterMute", event.target.checked)} />
-          Master Mute
-        </label>
-
-        <label className="check-row">
-          <input type="checkbox" checked={settings.speakLetters} onChange={(event) => update("speakLetters", event.target.checked)} />
-          Speak Each Letter
-        </label>
-
-        <label className="check-row">
-          <input type="checkbox" checked={settings.speakWords} onChange={(event) => update("speakWords", event.target.checked)} />
-          Speak Completed Word
-        </label>
       </div>
-    </details>
+    </section>
+  );
+}
+
+interface ToggleButtonProps {
+  label: string;
+  checked: boolean;
+  onToggle(): void;
+}
+
+function ToggleButton({ label, checked, onToggle }: ToggleButtonProps) {
+  return (
+    <button type="button" className="toggle-button" role="switch" aria-label={label} aria-checked={checked} onClick={onToggle}>
+      <span>{label}</span>
+      <span className="toggle-state" aria-hidden="true">
+        {checked ? "On" : "Off"}
+      </span>
+    </button>
   );
 }
